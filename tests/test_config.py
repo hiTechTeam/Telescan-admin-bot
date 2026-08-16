@@ -4,10 +4,9 @@ from pydantic import ValidationError
 from src.config import Settings
 
 
-def test_admin_ids_are_parsed_from_environment_format() -> None:
-    settings = Settings(
-        admin_telegram_ids="2045659349, 42",  # type: ignore[arg-type]
-    )
+def test_admin_ids_are_parsed_from_environment_format(monkeypatch) -> None:
+    monkeypatch.setenv("ADMIN_TELEGRAM_IDS", "2045659349, 42")
+    settings = Settings()
 
     assert settings.admin_telegram_ids == [2045659349, 42]
 

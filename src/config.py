@@ -2,7 +2,7 @@ from typing import Annotated
 from urllib.parse import urlsplit
 
 from pydantic import BeforeValidator, Field, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 def _parse_admin_ids(value: object) -> object:
@@ -11,7 +11,7 @@ def _parse_admin_ids(value: object) -> object:
     return value
 
 
-AdminIDs = Annotated[list[int], BeforeValidator(_parse_admin_ids)]
+AdminIDs = Annotated[list[int], NoDecode, BeforeValidator(_parse_admin_ids)]
 
 
 class Settings(BaseSettings):
