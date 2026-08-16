@@ -1,0 +1,104 @@
+name: Deploy Telescan Admin Bot
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-telescan-admin-bot
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+
+      - name: Type check
+        run: uv run pyright
+
+      - name: Test
+        run: uv run pytest
+
+      - name: Build Docker image
+        run: docker build --tag telescan-admin-bot:ci .
+
+  deploy:
+    name: Deploy to production
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Deploy admin bot
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes "$SERVER_USER@$SERVER_HOST" <<'REMOTE'
+          set -Eeuo pipefail
+          TARGET_DIR=/home/ubuntu/telescan/Telescan-admin-bot
+
+          if [ ! -d "$TARGET_DIR/.git" ]; then
+            mkdir -p "$TARGET_DIR"
+            git -C "$TARGET_DIR" init -b main
+            git -C "$TARGET_DIR" remote add origin \
+              https://github.com/hiTechTeam/Telescan-admin-bot.git
+            git -C "$TARGET_DIR" fetch origin main
+            git -C "$TARGET_DIR" checkout -B main FETCH_HEAD
+          fi
+
+          cd "$TARGET_DIR"
+          test -z "$(git status --porcelain)"
+          git fetch origin main
+          git checkout main
+          git merge --ff-only origin/main
+          test -s .env
+          docker compose config --quiet
+          docker compose up -d --build --no-deps telescan-admin-bot
+
+          CONTAINER_ID="$(docker compose ps -q telescan-admin-bot)"
+          test -n "$CONTAINER_ID"
+          for attempt in {1..20}; do
+            HEALTH_STATUS="$(docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_ID")"
+            if [ "$HEALTH_STATUS" = "healthy" ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          docker compose ps telescan-admin-bot
+          test "$(docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_ID")" = "healthy"
+          REMOTE

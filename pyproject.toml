@@ -1,0 +1,40 @@
+[project]
+name = "telescan-admin-bot"
+version = "0.1.0"
+description = "Private Telegram moderation client for Telescan reports"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "aiogram>=3.22.0",
+  "aiohttp>=3.12.0",
+  "aiohttp-socks>=0.11.0",
+  "pydantic>=2.12.0",
+  "pydantic-settings>=2.11.0",
+]
+
+[dependency-groups]
+dev = [
+  "pyright>=1.1.400",
+  "pytest>=8.4.0",
+  "pytest-asyncio>=1.2.0",
+  "ruff>=0.12.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
+
+[tool.pyright]
+typeCheckingMode = "basic"
+pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
+include = ["run_polling.py", "src", "tests"]
+exclude = [".venv"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
