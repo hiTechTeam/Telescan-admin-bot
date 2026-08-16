@@ -23,4 +23,4 @@ RUN uv sync --frozen --no-dev \
 
 USER telescan
 
-CMD ["uv", "run", "--no-dev", "run_polling.py"]
+CMD ["/app/.venv/bin/python", "run_polling.py"]
