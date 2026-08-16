@@ -57,6 +57,11 @@ docker compose up -d --build
 The health endpoint is available only inside Docker at `/health/live`. The
 service does not publish a host port.
 
+The container runs as the unprivileged `telescan` user with a read-only root
+filesystem, all Linux capabilities dropped, and `no-new-privileges`. Only the
+named `/data` volume is writable for SQLite notification deduplication; `/tmp`
+is a bounded tmpfs.
+
 ## Moderator workflow
 
 1. Open the bot and send `/start`.
@@ -86,3 +91,8 @@ Runtime secrets live only in
 `/home/ubuntu/telescan/Telescan-admin-bot/.env` on the server. The deploy job
 clones the repository on the first run, performs only fast-forward updates, and
 waits for the container health check.
+
+The `main` branch is protected and changes are merged through pull requests;
+force-pushes and deletion are disabled. Secret scanning with push protection,
+vulnerability alerts, and Dependabot security updates are enabled for the
+repository.
