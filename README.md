@@ -92,8 +92,8 @@ available. The current workflow does not run for pull requests, so run
 
 Runtime secrets live only in
 `/home/ubuntu/telescan/Telescan-admin-bot/.env` on the server. The deploy job
-clones the repository on the first run, performs only fast-forward updates, and
-waits for the container health check.
+checks out the private repository inside GitHub Actions, uploads the release
+over SSH without replacing `.env`, and waits for the container health check.
 
 This implementation repository is private. Changes are reviewed through pull
 requests by project convention, while the current GitHub plan does not enforce
