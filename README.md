@@ -31,6 +31,7 @@ Copy `.env.example` to `.env` and configure:
 | `TELEGRAM_PROXY_URL` | Optional proxy supported by aiogram |
 | `API_BASE_URL` | Private Docker URL of Telescan API |
 | `MODERATION_SERVICE_SECRET` | Same separate moderation secret as Telescan API |
+| `API_TIMEOUT_SECONDS` | Timeout for moderation API calls, 15 seconds by default |
 | `REPORT_POLL_INTERVAL_SECONDS` | New-report polling interval, 10–300 seconds |
 | `DATABASE_PATH` | SQLite file used only for notification deduplication |
 
@@ -79,8 +80,10 @@ Telegram commands:
 ## Deployment
 
 Pushes to `main` run linting, formatting, Pyright, tests, a Docker build, and a
-production deployment through GitHub Actions. The repository requires these
-Actions secrets:
+production deployment through GitHub Actions. Manual workflow dispatch is also
+available. The current workflow does not run for pull requests, so run
+`make check` before review and treat a successful `Validate and build` job on
+`main` as the deployment gate. The repository requires these Actions secrets:
 
 - `SERVER_HOST`
 - `SERVER_USER`
@@ -92,7 +95,18 @@ Runtime secrets live only in
 clones the repository on the first run, performs only fast-forward updates, and
 waits for the container health check.
 
-The `main` branch is protected and changes are merged through pull requests;
-force-pushes and deletion are disabled. Secret scanning with push protection,
-vulnerability alerts, and Dependabot security updates are enabled for the
+This implementation repository is private. Changes are reviewed through pull
+requests by project convention, while the current GitHub plan does not enforce
+branch protection/rulesets or provide secret scanning and push protection for
+private repositories. Dependabot vulnerability alerts and security updates are
+enabled. Do not force-push or delete `main`; these safeguards remain procedural
+until repository protection is available for the private plan.
+
+Cross-service architecture, moderation boundaries, and production risks are
+maintained in the private
+[`Telescan-internal-docs`](https://github.com/hiTechTeam/Telescan-internal-docs)
 repository.
+
+## License
+
+Proprietary and confidential. See [LICENSE](LICENSE).
