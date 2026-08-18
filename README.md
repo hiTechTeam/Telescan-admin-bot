@@ -79,11 +79,10 @@ Telegram commands:
 
 ## Deployment
 
-Pushes to `main` run linting, formatting, Pyright, tests, a Docker build, and a
-production deployment through GitHub Actions. Manual workflow dispatch is also
-available. The current workflow does not run for pull requests, so run
-`make check` before review and treat a successful `Validate and build` job on
-`main` as the deployment gate. The repository requires these Actions secrets:
+Pull requests run linting, formatting, Pyright, tests, and a Docker build without
+accessing production deployment steps. Pushes to `main` repeat those checks and
+deploy to production only after they pass. Manual workflow dispatch is also
+available. The repository requires these Actions secrets:
 
 - `SERVER_HOST`
 - `SERVER_USER`
