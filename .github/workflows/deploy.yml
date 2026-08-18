@@ -1,6 +1,7 @@
 name: Deploy Telescan Admin Bot
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -47,6 +48,7 @@ jobs:
 
   deploy:
     name: Deploy to production
+    if: github.event_name != 'pull_request'
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
