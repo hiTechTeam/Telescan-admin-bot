@@ -17,8 +17,7 @@ Telescan API Docker network.
 - Telegram ID allow-list enforced for messages and callback queries;
 - no public ports and no direct database access.
 
-The initial production administrator is Telegram ID `2045659349`. Add more IDs
-through `ADMIN_TELEGRAM_IDS` as a comma-separated allow-list.
+Administrators are configured through the `ADMIN_TELEGRAM_IDS` allow-list.
 
 ## Configuration
 
@@ -93,13 +92,6 @@ Runtime secrets live only in
 `/home/ubuntu/telescan/Telescan-admin-bot/.env` on the server. The deploy job
 checks out the private repository inside GitHub Actions, uploads the release
 over SSH without replacing `.env`, and waits for the container health check.
-
-This implementation repository is private. Changes are reviewed through pull
-requests by project convention, while the current GitHub plan does not enforce
-branch protection/rulesets or provide secret scanning and push protection for
-private repositories. Dependabot vulnerability alerts and security updates are
-enabled. Do not force-push or delete `main`; these safeguards remain procedural
-until repository protection is available for the private plan.
 
 Cross-service architecture, moderation boundaries, and production risks are
 maintained in the private
