@@ -8,8 +8,8 @@ Telescan API Docker network.
 ## Features
 
 - queues for pending, reviewing, resolved, and dismissed reports;
-- report cards with reporter and target Telescan IDs, reason, comment, profile
-  snapshot, timestamps, and moderation history;
+- report cards with reporter and target Telescan IDs, reason, comment, captured
+  name, username, BIO, photo, timestamps, and moderation history;
 - explicit confirmation before resolving or dismissing a report;
 - moderator notes and a separate reviewing state;
 - automatic notifications about new reports;

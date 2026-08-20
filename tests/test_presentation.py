@@ -16,6 +16,7 @@ def make_report(status: ReportStatus = ReportStatus.PENDING) -> ModerationReport
         details="<script>unsafe</script>",
         targetName="Ada & Bob",
         targetUsername="nearby",
+        targetBio="iOS engineer & organizer",
         targetPhotoUrl="https://storage.example/photo.jpg",
         status=status,
         createdAt=now,
@@ -29,6 +30,7 @@ def test_report_card_escapes_user_controlled_text() -> None:
     assert "<script>" not in text
     assert "&lt;script&gt;unsafe&lt;/script&gt;" in text
     assert "Ada &amp; Bob" in text
+    assert "iOS engineer &amp; organizer" in text
 
 
 def test_callback_payloads_fit_telegram_limit() -> None:

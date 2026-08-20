@@ -31,6 +31,7 @@ class ModerationReport(BaseModel):
     details: str | None = None
     target_name: str | None = Field(default=None, alias="targetName")
     target_username: str | None = Field(default=None, alias="targetUsername")
+    target_bio: str | None = Field(default=None, alias="targetBio")
     target_photo_url: str | None = Field(default=None, alias="targetPhotoUrl")
     status: ReportStatus
     created_at: datetime = Field(alias="createdAt")

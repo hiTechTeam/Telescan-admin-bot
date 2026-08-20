@@ -64,9 +64,15 @@ def report_summary(report: ModerationReport, *, detailed: bool = False) -> str:
         f"<b>Статус:</b> {STATUS_ICONS[report.status]} {STATUS_LABELS[report.status]}",
         f"<b>Причина:</b> {escape(REASON_LABELS[report.reason])}",
         f"<b>Профиль:</b> {escape(name)} · {escape(username)}",
-        f"<b>Комментарий:</b> {details}",
-        f"<b>Создана:</b> {created}",
     ]
+    if report.target_bio:
+        lines.append(f"<b>BIO:</b> {escape(report.target_bio)}")
+    lines.extend(
+        [
+            f"<b>Комментарий:</b> {details}",
+            f"<b>Создана:</b> {created}",
+        ]
+    )
     if detailed:
         lines.extend(
             [

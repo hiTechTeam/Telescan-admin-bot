@@ -24,6 +24,7 @@ async def test_client_lists_and_updates_reports_with_service_auth() -> None:
             "details": None,
             "targetName": "Target",
             "targetUsername": "target",
+            "targetBio": "Open to networking",
             "targetPhotoUrl": None,
             "status": status,
             "createdAt": "2026-08-16T12:00:00Z",
@@ -85,6 +86,7 @@ async def test_client_lists_and_updates_reports_with_service_auth() -> None:
         await server.close()
 
     assert reports[0].report_id == report_id
+    assert reports[0].target_bio == "Open to networking"
     assert updated.status == ReportStatus.REVIEWING
     assert [call[0] for call in calls] == ["GET", "PATCH"]
     assert all(
