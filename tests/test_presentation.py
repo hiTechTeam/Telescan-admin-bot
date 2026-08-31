@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from src.keyboards import report_keyboard, reports_keyboard
 from src.models import ModerationReport, ReportReason, ReportStatus
-from src.presentation import report_card
+from src.presentation import report_button_title, report_card
 
 
 def make_report(status: ReportStatus = ReportStatus.PENDING) -> ModerationReport:
@@ -49,3 +49,11 @@ def test_callback_payloads_fit_telegram_limit() -> None:
     ]
     assert callback_data
     assert all(len(value.encode()) <= 64 for value in callback_data)
+
+
+def test_universal_report_uses_clear_moderation_label() -> None:
+    report = make_report()
+    report.reason = ReportReason.OTHER
+
+    assert report_button_title(report).startswith("Жалоба · ")
+    assert "<b>Причина:</b> Жалоба" in report_card(report)

@@ -8,7 +8,7 @@ REASON_LABELS = {
     ReportReason.HARASSMENT: "Домогательства или травля",
     ReportReason.INAPPROPRIATE: "Неприемлемый контент",
     ReportReason.IMPERSONATION: "Выдаёт себя за другого",
-    ReportReason.OTHER: "Другое",
+    ReportReason.OTHER: "Жалоба",
 }
 
 STATUS_LABELS = {
