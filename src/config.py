@@ -14,6 +14,15 @@ def _parse_admin_ids(value: object) -> object:
 AdminIDs = Annotated[list[int], NoDecode, BeforeValidator(_parse_admin_ids)]
 
 
+def _is_placeholder(value: str) -> bool:
+    normalized = value.strip().lower()
+    return (
+        not normalized
+        or normalized.startswith(("development-", "replace-", "change-me"))
+        or normalized in {"token", "secret", "changeme"}
+    )
+
+
 class Settings(BaseSettings):
     environment: str = "development"
     bot_token: str = ""
@@ -48,12 +57,20 @@ class Settings(BaseSettings):
         if len(set(self.admin_telegram_ids)) != len(self.admin_telegram_ids):
             raise ValueError("ADMIN_TELEGRAM_IDS must not contain duplicates")
         if self.environment.lower() == "production":
-            if not self.bot_token:
+            token_identifier, separator, token_secret = self.bot_token.partition(":")
+            if (
+                _is_placeholder(self.bot_token)
+                or not separator
+                or not token_identifier.isdecimal()
+                or len(token_secret) < 10
+            ):
                 raise ValueError("BOT_TOKEN is required")
-            if self.moderation_service_secret.startswith(
-                "development-"
-            ) or self.moderation_service_secret.startswith("replace-"):
+            if _is_placeholder(self.moderation_service_secret):
                 raise ValueError("MODERATION_SERVICE_SECRET must be configured")
+            if self.moderation_service_secret == self.bot_token:
+                raise ValueError(
+                    "BOT_TOKEN and MODERATION_SERVICE_SECRET must be distinct"
+                )
             api_url = urlsplit(self.api_base_url)
             if (
                 api_url.scheme != "http"
@@ -62,6 +79,8 @@ class Settings(BaseSettings):
                 or api_url.username is not None
                 or api_url.password is not None
                 or api_url.path not in {"", "/"}
+                or api_url.query
+                or api_url.fragment
             ):
                 raise ValueError("Production API must use the private Docker network")
         return self

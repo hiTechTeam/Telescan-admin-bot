@@ -34,9 +34,10 @@ Copy `.env.example` to `.env` and configure:
 | `REPORT_POLL_INTERVAL_SECONDS` | New-report polling interval, 10–300 seconds |
 | `DATABASE_PATH` | SQLite file used only for notification deduplication |
 
-Production validation rejects the built-in development secret and requires the
-API URL to stay on the private `telescan_network`. The bot token and moderation
-secret must never be committed.
+Production validation rejects missing, malformed, placeholder, or reused bot
+and moderation credentials and requires the exact private API origin
+`http://telescan-api:8000` without credentials, path, query, or fragment. The
+bot token and moderation secret must never be committed.
 
 ## Local development
 
@@ -67,8 +68,15 @@ is a bounded tmpfs.
 1. Open the bot and send `/start`.
 2. Open pending reports or wait for a new-report notification.
 3. Inspect the report and captured profile snapshot.
-4. Move it to reviewing, optionally attach a moderator note, then resolve or
-   dismiss it with explicit confirmation.
+4. Move it to reviewing, optionally attaching a moderator note as part of that
+   transition, then resolve or dismiss it with explicit confirmation.
+
+Every mutation reloads the current report and sends its `revision`; a stale
+card receives `409` and must be refreshed. The API permits only
+`pending -> reviewing|resolved|dismissed` and
+`reviewing -> resolved|dismissed`; resolved/dismissed reports are terminal.
+The card distinguishes durable moderation photo evidence as available, absent,
+or pending retry after a copy failure.
 
 Telegram commands:
 
@@ -90,8 +98,30 @@ available. The repository requires these Actions secrets:
 
 Runtime secrets live only in
 `/home/ubuntu/telescan/Telescan-admin-bot/.env` on the server. The deploy job
-checks out the private repository inside GitHub Actions, uploads the release
-over SSH without replacing `.env`, and waits for the container health check.
+checks out the private repository inside GitHub Actions and finalizes the upload
+as a root-owned, read-only immutable release without copying `.env`. A versioned
+host controller runs under the shared `/tmp/telescan-production-deploy.lock`,
+snapshots the complete active configuration except `.env`, and protects the
+previous image under a unique rollback tag. Release files, the snapshot, and
+their directory ancestry are fsynced before the controller publishes and
+fsyncs a durable `prepared` intent.
+
+The candidate is promoted only after that intent exists. Any failure before the
+fsynced `committed` transition restores both the snapshot and protected image,
+then requires exactly one restored container to be `healthy`. The intent is
+cleared only after a healthy rollback or committed candidate is verified. The
+deploy runs as a transient systemd service so an SSH disconnect cannot strand
+the shell, while an enabled persistent systemd timer dispatches recovery after
+a process crash or host reboot using the controller recorded by the immutable
+release. The installed launcher, systemd units, enable symlink, and their
+directories are fsynced and attested before a transaction may start. A corrupt
+or unrecoverable intent remains in place and fails closed for operator review.
+Only protected `main` can deploy, and workflow concurrency does not cancel an
+active production transaction.
+
+Deploy this bot during the API's explicitly bounded revision-compatibility
+window, then enable mandatory revisions in the API. Do not leave the API
+compatibility deadline extended after this client is live.
 
 Cross-service architecture, moderation boundaries, and production risks are
 maintained in the private

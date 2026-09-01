@@ -132,6 +132,7 @@ def build_router(api: ModerationAPIClient, admin_ids: set[int]) -> Router:
                     report_id,
                     ReportStatus.REVIEWING,
                     _moderator_id(callback.from_user.id),
+                    revision=callback_data.revision,
                 )
             except ModerationAPIError:
                 logger.exception("Could not claim report %s", report_id)
@@ -145,21 +146,14 @@ def build_router(api: ModerationAPIClient, admin_ids: set[int]) -> Router:
             return
 
         if callback_data.action == "note":
-            try:
-                report = await api.get_report(report_id)
-            except ModerationAPIError:
-                await callback.answer("Жалоба недоступна", show_alert=True)
-                return
-            if report.status not in {ReportStatus.PENDING, ReportStatus.REVIEWING}:
-                await callback.answer("Решение по жалобе уже принято", show_alert=True)
-                return
             await state.set_state(ModerationStates.waiting_for_note)
             await state.set_data(
                 {
                     "report_id": str(report_id),
-                    "status": report.status.value,
+                    "status": ReportStatus.PENDING.value,
                     "origin_status": origin_status.value,
                     "origin_page": callback_data.origin_page,
+                    "revision": callback_data.revision,
                 }
             )
             await callback.answer()
@@ -180,6 +174,7 @@ def build_router(api: ModerationAPIClient, admin_ids: set[int]) -> Router:
                 callback_data.report_id,
                 callback_data.origin_status,
                 callback_data.origin_page,
+                callback_data.revision,
             ),
         )
 
@@ -196,10 +191,12 @@ def build_router(api: ModerationAPIClient, admin_ids: set[int]) -> Router:
             else ReportStatus.DISMISSED
         )
         try:
-            report = await api.update_report(
+            report = await _submit_confirmed_decision(
+                api,
                 UUID(callback_data.report_id),
                 status,
                 _moderator_id(callback.from_user.id),
+                callback_data.revision,
             )
         except (ValueError, ModerationAPIError):
             logger.exception("Could not decide report %s", callback_data.report_id)
@@ -222,17 +219,17 @@ def build_router(api: ModerationAPIClient, admin_ids: set[int]) -> Router:
             return
         data = await state.get_data()
         current_status = ReportStatus(str(data["status"]))
-        next_status = (
-            ReportStatus.REVIEWING
-            if current_status == ReportStatus.PENDING
-            else current_status
-        )
+        if current_status != ReportStatus.PENDING:
+            await state.clear()
+            await message.answer("Жалоба уже была взята в работу. Обновите карточку.")
+            return
         try:
             report = await api.update_report(
                 UUID(str(data["report_id"])),
-                next_status,
+                ReportStatus.REVIEWING,
                 _moderator_id(message.from_user.id),
                 note,
+                revision=int(data["revision"]),
             )
         except (ValueError, ModerationAPIError):
             logger.exception("Could not save moderation note")
@@ -254,6 +251,27 @@ def build_router(api: ModerationAPIClient, admin_ids: set[int]) -> Router:
 
 def _moderator_id(telegram_id: int) -> str:
     return f"telegram:{telegram_id}"
+
+
+async def _submit_confirmed_decision(
+    api: ModerationAPIClient,
+    report_id: UUID,
+    status: ReportStatus,
+    moderator_id: str,
+    revision: int,
+):
+    """Submit the revision rendered in the original card.
+
+    Refreshing here would turn a stale confirmation into a write against the
+    newest state and silently defeat the API compare-and-swap contract.
+    """
+
+    return await api.update_report(
+        report_id,
+        status,
+        moderator_id,
+        revision=revision,
+    )
 
 
 async def _edit_callback(

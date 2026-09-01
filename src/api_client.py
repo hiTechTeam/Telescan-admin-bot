@@ -7,6 +7,8 @@ import aiohttp
 from src.errors import ModerationAPIError, ReportNotFound
 from src.models import ModerationDecision, ModerationReport, ReportStatus
 
+_NOTE_UNSET = object()
+
 
 class ModerationAPIClient:
     def __init__(
@@ -70,19 +72,26 @@ class ModerationAPIClient:
         report_id: UUID,
         status: ReportStatus,
         moderator_id: str,
-        note: str | None = None,
+        note: str | None | object = _NOTE_UNSET,
+        revision: int | None = None,
     ) -> ModerationReport:
-        decision = ModerationDecision.model_validate(
-            {
-                "status": status,
-                "moderatorId": moderator_id,
-                "note": note,
-            }
-        )
+        decision_payload: dict[str, object] = {
+            "status": status,
+            "moderatorId": moderator_id,
+        }
+        if note is not _NOTE_UNSET:
+            decision_payload["note"] = note
+        if revision is not None:
+            decision_payload["revision"] = revision
+        decision = ModerationDecision.model_validate(decision_payload)
         payload = await self._request_json(
             "PATCH",
             f"/internal/v1/moderation/reports/{report_id}",
-            json=decision.model_dump(by_alias=True, mode="json"),
+            json=decision.model_dump(
+                by_alias=True,
+                mode="json",
+                exclude_unset=True,
+            ),
         )
         return ModerationReport.model_validate(payload)
 

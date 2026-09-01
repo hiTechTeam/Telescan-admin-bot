@@ -26,6 +26,7 @@ async def test_client_lists_and_updates_reports_with_service_auth() -> None:
             "targetUsername": "target",
             "targetBio": "Open to networking",
             "targetPhotoUrl": None,
+            "targetPhotoEvidenceStatus": "absent",
             "status": status,
             "createdAt": "2026-08-16T12:00:00Z",
             "updatedAt": "2026-08-16T12:00:00Z",
@@ -33,6 +34,7 @@ async def test_client_lists_and_updates_reports_with_service_auth() -> None:
             "retentionUntil": None,
             "moderatorId": None,
             "moderatorNote": None,
+            "revision": 0,
         }
 
     async def list_reports(request: web.Request) -> web.Response:
@@ -80,6 +82,7 @@ async def test_client_lists_and_updates_reports_with_service_auth() -> None:
             ReportStatus.REVIEWING,
             "telegram:2045659349",
             "checking",
+            revision=0,
         )
     finally:
         await client.close()
@@ -97,4 +100,5 @@ async def test_client_lists_and_updates_reports_with_service_auth() -> None:
         "status": "reviewing",
         "moderatorId": "telegram:2045659349",
         "note": "checking",
+        "revision": 0,
     }

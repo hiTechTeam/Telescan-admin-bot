@@ -26,6 +26,7 @@ class ReportActionCallback(CallbackData, prefix="act"):
     report_id: str
     origin_status: str
     origin_page: int
+    revision: int
 
 
 class ReportConfirmCallback(CallbackData, prefix="cfm"):
@@ -33,6 +34,7 @@ class ReportConfirmCallback(CallbackData, prefix="cfm"):
     report_id: str
     origin_status: str
     origin_page: int
+    revision: int
 
 
 def main_menu_keyboard() -> InlineKeyboardMarkup:
@@ -123,23 +125,24 @@ def report_keyboard(
         "origin_status": origin_status.value,
         "origin_page": origin_page,
     }
+    action_common = {**common, "revision": report.revision}
     if report.status == ReportStatus.PENDING:
         builder.button(
             text="🔎 Взять в работу",
-            callback_data=ReportActionCallback(action="review", **common),
+            callback_data=ReportActionCallback(action="review", **action_common),
+        )
+        builder.button(
+            text="✍️ Добавить заметку",
+            callback_data=ReportActionCallback(action="note", **action_common),
         )
     if report.status in {ReportStatus.PENDING, ReportStatus.REVIEWING}:
         builder.button(
-            text="✍️ Добавить заметку",
-            callback_data=ReportActionCallback(action="note", **common),
-        )
-        builder.button(
             text="✅ Решить",
-            callback_data=ReportActionCallback(action="resolve", **common),
+            callback_data=ReportActionCallback(action="resolve", **action_common),
         )
         builder.button(
             text="🚫 Отклонить",
-            callback_data=ReportActionCallback(action="dismiss", **common),
+            callback_data=ReportActionCallback(action="dismiss", **action_common),
         )
     builder.adjust(1, 1, 2)
     if report.target_photo_url and report.target_photo_url.startswith("https://"):
@@ -167,6 +170,7 @@ def confirmation_keyboard(
     report_id: str,
     origin_status: str,
     origin_page: int,
+    revision: int,
 ) -> InlineKeyboardMarkup:
     label = "✅ Подтвердить решение" if decision == "r" else "🚫 Подтвердить"
     return InlineKeyboardMarkup(
@@ -179,6 +183,7 @@ def confirmation_keyboard(
                         report_id=report_id,
                         origin_status=origin_status,
                         origin_page=origin_page,
+                        revision=revision,
                     ).pack(),
                 )
             ],

@@ -1,3 +1,5 @@
+name: telescan-admin-bot
+
 services:
   telescan-admin-bot:
     build:
@@ -5,6 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: telescan_admin_bot
     restart: unless-stopped
+    deploy:
+      replicas: 1
     expose:
       - "8080"
     env_file:

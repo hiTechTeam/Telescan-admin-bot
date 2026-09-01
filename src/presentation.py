@@ -1,7 +1,12 @@
 from html import escape
 from zoneinfo import ZoneInfo
 
-from src.models import ModerationReport, ReportReason, ReportStatus
+from src.models import (
+    ModerationReport,
+    ReportPhotoEvidenceStatus,
+    ReportReason,
+    ReportStatus,
+)
 
 REASON_LABELS = {
     ReportReason.SPAM: "Спам",
@@ -67,6 +72,12 @@ def report_summary(report: ModerationReport, *, detailed: bool = False) -> str:
     ]
     if report.target_bio:
         lines.append(f"<b>BIO:</b> {escape(report.target_bio)}")
+    evidence_label = {
+        ReportPhotoEvidenceStatus.AVAILABLE: "сохранено для модерации",
+        ReportPhotoEvidenceStatus.ABSENT: "отсутствовало при жалобе",
+        ReportPhotoEvidenceStatus.COPY_FAILED: "копирование ожидает повтора",
+    }[report.target_photo_evidence_status]
+    lines.append(f"<b>Фото-доказательство:</b> {evidence_label}")
     lines.extend(
         [
             f"<b>Комментарий:</b> {details}",

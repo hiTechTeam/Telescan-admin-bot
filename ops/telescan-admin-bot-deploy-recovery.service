@@ -1,0 +1,10 @@
+[Unit]
+Description=Recover an interrupted Telescan admin-bot deployment
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+ConditionPathExists=/home/ubuntu/telescan/.transactions/Telescan-admin-bot/active.json
+
+[Service]
+Type=oneshot
+ExecStart=/home/ubuntu/telescan/.deploy-controller/Telescan-admin-bot/recover-deployment.sh
+TimeoutStartSec=35min
